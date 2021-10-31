@@ -4,10 +4,9 @@ export default defineConfig({
   nodeModulesTransform: {
     type: 'none',
   },
-  routes: [
-    { path: '/', component: '@/pages/index' },
-  ],
+  routes: [{ path: '/', component: '@/pages/index' }],
   fastRefresh: {},
   antd: {},
-  mfsu: {}
+  mfsu: {},
+  publicPath: '/nutrition-calculation/',
 });
