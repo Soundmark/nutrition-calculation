@@ -1,37 +1,97 @@
-import { Button, Descriptions, Input } from 'antd';
+import { Button, Descriptions, Input, message, Spin } from 'antd';
 import './index.less';
 import { useState } from 'react';
-
-const nutritions = ['Protein']
+import { infoConfig } from './config';
 
 export default function IndexPage() {
-  const [searchVal, setSearchVal] = useState('')
+  const [searchVal, setSearchVal] = useState('');
+  const [info, setInfo] = useState<any>({});
+  const [loading, setLoading] = useState(false);
+  const nutritionKeys = infoConfig.map((item) => item.key);
+
+  const translate = async (val: string, sl = 'zh-CN', tl = 'en') => {
+    const translationRes = await fetch(
+      `https://translate.googleapis.com/translate_a/single?client=gtx&dt=t&sl=${sl}&tl=${tl}&q=${val}`,
+    );
+    return (await translationRes.json())[0][0][0];
+  };
+
+  const handleFoodData = async (food: any) => {
+    const nutritions = food.foodNutrients.filter((item: any) => {
+      return nutritionKeys.find((ele) => {
+        if (item.nutrientName.toLowerCase().includes(ele)) {
+          item.key = ele;
+          return true;
+        }
+      });
+    });
+    const name = await translate(food.description.split(',')[0], 'en', 'zh-CN');
+    const info: any = {
+      name: name,
+    };
+    nutritions.forEach((item: any) => {
+      info[item.key] = item.value + ' ' + item.unitName.toLowerCase();
+    });
+    setInfo(info);
+  };
+
   // https://translate.googleapis.com/translate_a/single?client=gtx&dt=t&sl=en&tl=zh-CN&q=
   // https://api.nal.usda.gov/fdc/v1/foods/search?query=apple&pageSize=2&api_key=pE33hLApRetG8zK7GTzXRMxcgmcYb8XdlqmD7e1S
   const onSearch = async () => {
-    const translationRes = await fetch('https://translate.googleapis.com/translate_a/single?client=gtx&dt=t&sl=zh-CN&tl=en&q='+searchVal)
-    const translation = await translationRes.json()
-    const foodRes = await fetch(`https://api.nal.usda.gov/fdc/v1/foods/search?query=${translation}&pageSize=2&api_key=pE33hLApRetG8zK7GTzXRMxcgmcYb8XdlqmD7e1S`)
-    const food = await foodRes.json()
-    console.log(food)
-  }
+    if (!setSearchVal) return;
+    setLoading(true);
+    const translation = await translate(searchVal);
+    const foodRes = await fetch(
+      `https://api.nal.usda.gov/fdc/v1/foods/search?api_key=pE33hLApRetG8zK7GTzXRMxcgmcYb8XdlqmD7e1S`,
+      {
+        body: JSON.stringify({
+          includeDataTypes: {
+            'Survey (FNDDS)': true,
+          },
+          query: translation,
+          pageSize: 2,
+        }),
+        method: 'post',
+        headers: {
+          'content-type': 'application/json',
+        },
+      },
+    );
+    const data = await foodRes.json();
+    const food = data.foods[0];
+    if (food) {
+      await handleFoodData(food);
+    } else {
+      message.error('请求失败，请重试！');
+    }
+    setLoading(false);
+  };
 
   return (
-    <div className='root'>
-      <div className='left'>
-        <div className='title'>营养计算</div>
+    <div className="root">
+      <div className="left">
+        <div className="title">营养计算</div>
       </div>
-      <div className='right'>
-        <div className='title'>食物营养查询</div>
-        <div className='search'>
-          <Input value={searchVal} onChange={(e)=>setSearchVal(e.target.value)}></Input>
-          <Button type='primary' onClick={onSearch}>搜索</Button>
+      <div className="right">
+        <div className="title">食物营养查询</div>
+        <div className="search">
+          <Input
+            value={searchVal}
+            onChange={(e) => setSearchVal(e.target.value)}
+          ></Input>
+          <Button type="primary" onClick={onSearch}>
+            搜索
+          </Button>
         </div>
-        <Descriptions>
-          <Descriptions.Item label='名称'>1</Descriptions.Item>
-          <Descriptions.Item label='单位含量'>每100g</Descriptions.Item>
-          <Descriptions.Item label='能量'></Descriptions.Item>
-        </Descriptions>
+        <Spin spinning={loading}>
+          <Descriptions bordered size="middle" column={1}>
+            {infoConfig.map((item) => (
+              <Descriptions.Item label={item.label} key={item.key}>
+                {item.content || info[item.key]}
+              </Descriptions.Item>
+            ))}
+          </Descriptions>
+        </Spin>
       </div>
     </div>
   );
