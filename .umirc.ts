@@ -8,5 +8,8 @@ export default defineConfig({
   fastRefresh: {},
   antd: {},
   mfsu: {},
-  publicPath: '/nutrition-calculation/',
+  publicPath:
+    process.env.NODE_ENV === 'development' ? '/' : '/nutrition-calculation/',
+  base:
+    process.env.NODE_ENV === 'development' ? '/' : '/nutrition-calculation/',
 });
