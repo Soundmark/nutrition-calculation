@@ -3,12 +3,24 @@ import './index.less';
 import { useState } from 'react';
 import { infoConfig } from './config';
 import Calculation from './Calculation';
+import { useEffect } from 'react';
 
 export default function IndexPage() {
   const [searchVal, setSearchVal] = useState('');
   const [info, setInfo] = useState<any>({});
   const [loading, setLoading] = useState(false);
   const nutritionKeys = infoConfig.map((item) => item.key);
+
+  useEffect(() => {
+    if (navigator.userAgent.toLowerCase().includes('mobile')) {
+      const container = document.querySelector('.root');
+      console.log(container);
+      if (container) {
+        container.style.position = 'static';
+        container.style.transform = 'none';
+      }
+    }
+  }, []);
 
   const translate = async (val: string, sl = 'zh-CN', tl = 'en') => {
     const translationRes = await fetch(
