@@ -2,6 +2,7 @@ import { Button, Descriptions, Input, message, Spin } from 'antd';
 import './index.less';
 import { useState } from 'react';
 import { infoConfig } from './config';
+import Calculation from './Calculation';
 
 export default function IndexPage() {
   const [searchVal, setSearchVal] = useState('');
@@ -71,6 +72,7 @@ export default function IndexPage() {
     <div className="root">
       <div className="left">
         <div className="title">营养计算</div>
+        <Calculation></Calculation>
       </div>
       <div className="right">
         <div className="title">食物营养查询</div>
